@@ -1,17 +1,34 @@
+import subprocess
 from django.shortcuts import render
 from django.http import JsonResponse
 from .models import Video, Subtitle
-from .tasks import extract_subtitles
 import os
 
 def upload_video(request):
     if request.method == 'POST':
         video = request.FILES['video']
         video_obj = Video.objects.create(video_file=video)
-        # Call background task to process video
-        extract_subtitles.delay(video_obj.id)
-        return JsonResponse({'message': 'Video uploaded and is being processed.'})
+        # Process video subtitles synchronously
+        extract_subtitles(video_obj.id)  # This is now synchronous
+        return JsonResponse({'message': 'Video uploaded and subtitles have been processed.'})
     return render(request, 'upload.html')
+
+def extract_subtitles(video_id):
+    video = Video.objects.get(id=video_id)
+    video_path = video.video_file.path
+    output_subtitle_path = video_path.replace('.mp4', '.srt')
+    
+    # Using ffmpeg to extract subtitles
+    command = f'ffmpeg -i {video_path} -map 0:s:0 {output_subtitle_path}'
+    subprocess.run(command, shell=True)
+    
+    # Read and save subtitle content to the database
+    with open(output_subtitle_path, 'r') as f:
+        subtitle_text = f.read()
+    
+    Subtitle.objects.create(video=video, language='en', subtitle_text=subtitle_text)
+    # os.remove(output_subtitle_path)  # Clean up after processing
+
 
 def search_subtitles(request):
     query = request.GET.get('q')
