@@ -1,0 +1,57 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>List Videos</title>
+</head>
+<body>
+    <h1>Uploaded Videos</h1>
+    <form method="GET" action="{% url 'search_subtitles' %}">
+        <input type="text" name="q" placeholder="Search subtitles">
+        <button type="submit">Search</button>
+    </form>
+    
+    {% for video in videos %}
+        <video src="{{ video.video_file.url }}" controls></video>
+    {% endfor %}
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>List Videos</title>
+    <script>
+    function fetchSubtitles(videoId) {
+        fetch(`/subtitles/${videoId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const subtitleContainer = document.getElementById('subtitles');
+                subtitleContainer.innerHTML = '';
+
+                data.subtitles.forEach(sub => {
+                    const subtitleElement = document.createElement('div');
+                    subtitleElement.innerHTML = `<strong>${sub.language}:</strong><p>${sub.text}</p>`;
+                    subtitleContainer.appendChild(subtitleElement);
+                });
+            });
+    }
+    </script>
+</head>
+<body>
+    <h1>Uploaded Videos</h1>
+    <form method="GET" action="{% url 'search_subtitles' %}">
+        <input type="text" name="q" placeholder="Search subtitles">
+        <button type="submit">Search</button>
+    </form>
+    
+    {% for video in videos %}
+        <video src="{{ video.video_file.url }}" controls></video>
+        <!-- Button to fetch subtitles -->
+        <button onclick="fetchSubtitles(video.id)">Show Subtitles</button>
+        <!-- Container to display subtitles -->
+        <div id="subtitles"></div>
+    {% endfor %}
+</body>
+</html>
+
+
