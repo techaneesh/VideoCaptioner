@@ -1,4 +1,71 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video with Subtitles</title>
+</head>
+<body>
+    <h1>Upload Video and See Subtitles</h1>
+    <input type="file" id="video-upload" accept="video/mp4">
+    <video id="video-player" controls style="display:none;">
+        <source id="video-source" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div id="subtitles-container"></div>
+
+    <script>
+        document.getElementById('video-upload').addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            var formData = new FormData();
+            formData.append('video', file);
+
+            fetch('/videos/upload/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken') // Ensure CSRF token is sent
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display video
+                var video = document.getElementById('video-player');
+                var videoSource = document.getElementById('video-source');
+                videoSource.src = URL.createObjectURL(file);
+                video.style.display = 'block';
+
+                // Display subtitles
+                var subtitlesContainer = document.getElementById('subtitles-container');
+                subtitlesContainer.innerHTML = ''; // Clear previous subtitles
+                data.subtitles.forEach(subtitle => {
+                    var subtitleElement = document.createElement('p');
+                    subtitleElement.innerHTML = `<strong>${subtitle.language}:</strong><br>${subtitle.subtitle_text.replace(/\n/g, '<br>')}`;
+                    subtitlesContainer.appendChild(subtitleElement);
+                });
+            })
+            .catch(error => console.error('Error uploading video:', error));
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Upload Video</title>
@@ -11,4 +78,4 @@
         <button type="submit">Upload Video</button>
     </form>
 </body>
-</html>
+</html> -->
